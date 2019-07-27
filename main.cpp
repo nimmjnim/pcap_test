@@ -5,7 +5,6 @@
 #include <libnet.h>
 #include <libnet/libnet-headers.h>
 #include <netinet/in.h>
-//#include <linux/if_ether.h>
 
 void usage() {
   printf("syntax: pcap_test <interface>\n");
@@ -44,11 +43,8 @@ int main(int argc, char* argv[]) {
     const u_char* packet;
     int res = pcap_next_ex(handle, &header, &packet);
     struct libnet_ethernet_hdr *Ether;
-    //struct ethhdr *Ether;
     struct libnet_tcp_hdr *TCP;
     struct libnet_ipv4_hdr *IP;
-    //struct ip *IP;
-    //struct tcphdr *TCP;
 
     if (res == 0) continue;
     if (res == -1 || res == -2) break;
