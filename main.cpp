@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <libnet.h>
+#include <libnet/libnet-headers.h>
 #include <netinet/in.h>
-#include <netinet/ip.h>
-#include <netinet/tcp.h>
-#include <linux/if_ether.h>
+//#include <linux/if_ether.h>
 
 void usage() {
   printf("syntax: pcap_test <interface>\n");
@@ -43,35 +43,38 @@ int main(int argc, char* argv[]) {
     struct pcap_pkthdr* header;
     const u_char* packet;
     int res = pcap_next_ex(handle, &header, &packet);
-    struct ethhdr *Ether;
-    struct ip *IP;
-    struct tcphdr *TCP;
+    struct libnet_ethernet_hdr *Ether;
+    //struct ethhdr *Ether;
+    struct libnet_tcp_hdr *TCP;
+    struct libnet_ipv4_hdr *IP;
+    //struct ip *IP;
+    //struct tcphdr *TCP;
 
     if (res == 0) continue;
     if (res == -1 || res == -2) break;
 
-    Ether = (struct ethhdr *)packet;
+    Ether = (struct libnet_ethernet_hdr *)packet;
     packet += 14;
-    IP = (struct ip *)packet;
+    IP = (struct libnet_ipv4_hdr *)packet;
     int hl = IP->ip_hl*4;
     packet += hl;
-    TCP = (struct tcphdr *)packet;
+    TCP = (struct libnet_tcp_hdr *)packet;
 
     printf("--------------------------------------------------\n");
     printf("DMAC: ");
-    print_MAC(Ether->h_dest);
+    print_MAC(Ether->ether_dhost);
     printf("SMAC: ");
-    print_MAC(Ether->h_source);
-    if(Ether->h_proto == 0x0008){
+    print_MAC(Ether->ether_shost);
+    if(Ether->ether_type == 0x0008){
         printf("Dip: ");
         print_ip(IP->ip_dst.s_addr);
         printf("Sip: ");
         print_ip(IP->ip_src.s_addr);
         if(IP->ip_p == 0x6){
             printf("DPort: ");
-            print_TCP(TCP->dest);
+            print_TCP(TCP->th_dport);
             printf("SPort: ");
-            print_TCP(TCP->source);
+            print_TCP(TCP->th_sport);
             if(ntohs(IP->ip_len)-hl-TCP->th_off*4 != 0){
                 int len = ntohs(IP->ip_len)-hl-TCP->th_off*4;
                 packet += TCP->th_off*4;
